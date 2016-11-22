@@ -1,0 +1,125 @@
+diff -ruN linux-3.19.0-orig/arch/x86/Kconfig.debug linux-3.19.0/arch/x86/Kconfig.debug
+--- linux-3.19.0-orig/arch/x86/Kconfig.debug	2016-11-20 21:31:27.188460773 +0700
++++ linux-3.19.0/arch/x86/Kconfig.debug	2016-11-22 21:03:30.169497633 +0700
+@@ -4,6 +4,7 @@
+ 	def_bool y
+ 
+ source "lib/Kconfig.debug"
++source "kernel/hello/Kconfig"
+ 
+ config STRICT_DEVMEM
+ 	bool "Filter access to /dev/mem"
+diff -ruN linux-3.19.0-orig/kernel/hello/hello2.c linux-3.19.0/kernel/hello/hello2.c
+--- linux-3.19.0-orig/kernel/hello/hello2.c	1970-01-01 07:00:00.000000000 +0700
++++ linux-3.19.0/kernel/hello/hello2.c	2016-11-20 16:50:00.000000000 +0700
+@@ -0,0 +1,21 @@
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++
++#include "hello.h"
++
++static int __init hello2_init(void)
++{
++    hello();
++
++    return 0;
++}
++
++static void __exit hello2_exit(void)
++{
++    goodbuy();
++}
++
++module_init(hello2_init);
++module_exit(hello2_exit);
++MODULE_LICENSE("GPL");
+\ No newline at end of file
+diff -ruN linux-3.19.0-orig/kernel/hello/hello.c linux-3.19.0/kernel/hello/hello.c
+--- linux-3.19.0-orig/kernel/hello/hello.c	1970-01-01 07:00:00.000000000 +0700
++++ linux-3.19.0/kernel/hello/hello.c	2016-11-20 16:02:31.000000000 +0700
+@@ -0,0 +1,35 @@
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++
++#include "hello.h"
++
++void hello(void)
++{
++    printk("Hello, World!!!\n");
++}
++
++EXPORT_SYMBOL(hello);
++
++void goodbuy(void)
++{
++    printk("Goodbuy, World!!!\n");
++}
++
++EXPORT_SYMBOL(goodbuy);
++
++static int __init hello_init(void)
++{
++    hello();
++
++    return 0;
++}
++
++static void __exit hello_exit(void)
++{
++    goodbuy();
++}
++
++module_init(hello_init);
++module_exit(hello_exit);
++MODULE_LICENSE("GPL");
+\ No newline at end of file
+diff -ruN linux-3.19.0-orig/kernel/hello/hello.h linux-3.19.0/kernel/hello/hello.h
+--- linux-3.19.0-orig/kernel/hello/hello.h	1970-01-01 07:00:00.000000000 +0700
++++ linux-3.19.0/kernel/hello/hello.h	2016-11-20 16:01:41.000000000 +0700
+@@ -0,0 +1,7 @@
++#ifndef __HELLO_H
++#define __HELLO_H
++
++void hello(void);
++void goodbuy(void);
++
++#endif // __HELLO_H
+\ No newline at end of file
+diff -ruN linux-3.19.0-orig/kernel/hello/Kconfig linux-3.19.0/kernel/hello/Kconfig
+--- linux-3.19.0-orig/kernel/hello/Kconfig	1970-01-01 07:00:00.000000000 +0700
++++ linux-3.19.0/kernel/hello/Kconfig	2016-11-22 22:16:08.352370292 +0700
+@@ -0,0 +1,13 @@
++config MYKERNEL
++	bool "My kernel modules"
++	default y
++	---help---
++	  This is my kernel modules.
++
++if MYKERNEL
++config MYKERNEL_HELLO
++	bool "hello() function"
++	default y
++	---help---
++	  Simple function hello() that say "Hello, World!!!\n".
++endif
+diff -ruN linux-3.19.0-orig/kernel/hello/Makefile linux-3.19.0/kernel/hello/Makefile
+--- linux-3.19.0-orig/kernel/hello/Makefile	1970-01-01 07:00:00.000000000 +0700
++++ linux-3.19.0/kernel/hello/Makefile	2016-11-22 22:15:30.719234341 +0700
+@@ -0,0 +1,2 @@
++obj-$(CONFIG_MYKERNEL_HELLO) += hello.o
++obj-$(CONFIG_MYKERNEL_HELLO) += hello2.o
+\ No newline at end of file
+diff -ruN linux-3.19.0-orig/kernel/Makefile linux-3.19.0/kernel/Makefile
+--- linux-3.19.0-orig/kernel/Makefile	2016-11-20 21:25:21.657164739 +0700
++++ linux-3.19.0/kernel/Makefile	2016-11-22 23:08:36.248086280 +0700
+@@ -27,6 +27,8 @@
+ obj-y += irq/
+ obj-y += rcu/
+ 
++obj-$(CONFIG_MYKERNEL) += hello/
++
+ obj-$(CONFIG_CHECKPOINT_RESTORE) += kcmp.o
+ obj-$(CONFIG_FREEZER) += freezer.o
+ obj-$(CONFIG_PROFILING) += profile.o
